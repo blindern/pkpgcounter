@@ -2,7 +2,7 @@
 #
 # pkpgcounter : a generic Page Description Language parser.
 #
-# (c) 2003-2009 Jerome Alet <alet@librelogiciel.com>
+# (c) 2003-2019 Jerome Alet <alet@librelogiciel.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -24,7 +24,7 @@ for prog in pkpgcounter ; do
              --section=1 \
              --name="count number of pages required to print various types of documents" \
              --manual="User Commands" \
-             --source="C@LL - Conseil Internet & Logiciels Libres" \
+             --source="Jerome Alet - <alet@librelogiciel.com>" \
              --output="temp$prog.1" \
              $prog ;
     /bin/sed -e "s/--/\\\-\\\-/g" <"temp$prog.1" >"$prog.1" ;

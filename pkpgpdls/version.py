@@ -2,7 +2,7 @@
 #
 # pkpgcounter : a generic Page Description Language parser
 #
-# (c) 2003-2009 Jerome Alet <alet@librelogiciel.com>
+# (c) 2003-2019 Jerome Alet <alet@librelogiciel.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,7 @@
 
 import time
 
-__version__ = "3.51alpha"
+__version__ = "3.51beta"
 
 __doc__ = """pkpgcounter : a generic Page Description Languages parser."""
 

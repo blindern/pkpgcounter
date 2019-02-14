@@ -2,7 +2,7 @@
 #
 # pkpgcounter : a generic Page Description Language parser
 #
-# (c) 2003-2009 Jerome Alet <alet@librelogiciel.com>
+# (c) 2003-2019 Jerome Alet <alet@librelogiciel.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +26,7 @@ import pdlparser
 try :
     from PIL import Image
 except ImportError :
-    sys.stderr.write("ERROR: You MUST install the Python Imaging Library (python-imaging) for pkpgcounter to work.\n")
+    sys.stderr.write("ERROR: You MUST install the Python Imaging Library (either PIL or Pillow) for pkpgcounter to work.\n")
     raise pdlparser.PDLParserError, "The Python Imaging Library is missing."
 
 import version

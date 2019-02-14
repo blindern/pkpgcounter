@@ -3,7 +3,7 @@
 #
 # pkpgcounter : a generic Page Description Language parser
 #
-# (c) 2003-2009 Jerome Alet <alet@librelogiciel.com>
+# (c) 2003-2019 Jerome Alet <alet@librelogiciel.com>
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -35,7 +35,7 @@ except ImportError, msg :
 try :
     from PIL import Image
 except ImportError :
-    sys.stderr.write("You need the Python Imaging Library (aka PIL).\nYou can grab it from http://www.pythonware.com\n")
+    sys.stderr.write("You need the Python Imaging Library (either PIL or Pillow).\n")
     sys.exit(-1)
 
 sys.path.insert(0, "pkpgpdls")
