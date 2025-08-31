@@ -25,8 +25,8 @@ import os
 import mmap
 import struct
 
-import pdlparser
-import version
+from . import pdlparser
+from . import version
 
 ESCAPECHARS = (chr(0x1b), chr(0x24))
 
@@ -35,10 +35,17 @@ class Parser(pdlparser.PDLParser) :
     format = "SPL1 (aka GDI)"
     def isValid(self) :
         """Returns True if data is SPL1, else False."""
-        if ((self.firstblock[:128].find("\033%-12345X") != -1) and \
-            (self.firstblock.find("$PJL ") != -1) and \
-             ((self.firstblock.find("LANGUAGE=SMART") != -1) or \
-              (self.firstblock.find("LANGUAGE = SMART") != -1))) :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if ((firstblock_str[:128].find("\033%-12345X") != -1) and \
+            (firstblock_str.find("$PJL ") != -1) and \
+             ((firstblock_str.find("LANGUAGE=SMART") != -1) or \
+              (firstblock_str.find("LANGUAGE = SMART") != -1))) :
             return True
         else :
             return False
@@ -111,7 +118,7 @@ class Parser(pdlparser.PDLParser) :
                         pos += self.escape(pos+1)
                     else :
                         if not self.isbitmap :
-                            raise pdlparser.PDLParserError, "Unfortunately SPL1 is incompletely recognized. Parsing aborted. Please report the problem to %s" % version.__authoremail__
+                            raise pdlparser.PDLParserError("Unfortunately SPL1 is incompletely recognized. Parsing aborted. Please report the problem to %s" % version.__authoremail__)
                         (offset,
                          seqnum) = unpack(">IH", minfile[pos:pos+6])
                         # self.logdebug("Offset : %i      Sequence Number : %i" % (offset, seqnum))
@@ -119,8 +126,8 @@ class Parser(pdlparser.PDLParser) :
                             # Sequence number resets to 0 for each new page.
                             self.pagecount += 1
                         pos += 4 + offset
-            except struct.error, msg :
-                raise pdlparser.PDLParserError, "Unfortunately SPL1 is incompletely recognized (%s). Parsing aborted. Please report the problem to %s" % (msg, version.__authoremail__)
+            except struct.error as msg :
+                raise pdlparser.PDLParserError("Unfortunately SPL1 is incompletely recognized (%s). Parsing aborted. Please report the problem to %s" % (msg, version.__authoremail__))
             except IndexError : # EOF ?
                 pass
         finally :

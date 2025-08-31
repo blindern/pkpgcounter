@@ -26,7 +26,7 @@
 
 import re
 
-import pdlparser
+from . import pdlparser
 
 PDFWHITESPACE = chr(0) \
                 + chr(9) \
@@ -41,14 +41,21 @@ class Parser(pdlparser.PDLParser) :
     """A parser for PDF documents."""
     totiffcommands = [ 'gs -sDEVICE=tiff24nc -dPARANOIDSAFER -dNOPAUSE -dBATCH -dQUIET -r"%(dpi)i" -sOutputFile="%(outfname)s" "%(infname)s"' ]
     required = [ "gs" ]
-    openmode = "rU"
+    openmode = "r"
     format = "PDF"
     def isValid(self) :
         """Returns True if data is PDF, else False."""
-        if self.firstblock.startswith("%PDF-") or \
-           self.firstblock.startswith("\033%-12345X%PDF-") or \
-           ((self.firstblock[:128].find("\033%-12345X") != -1) and (self.firstblock.upper().find("LANGUAGE=PDF") != -1)) or \
-           (self.firstblock.find("%PDF-") != -1) :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if firstblock_str.startswith("%PDF-") or \
+           firstblock_str.startswith("\033%-12345X%PDF-") or \
+           ((firstblock_str[:128].find("\033%-12345X") != -1) and (firstblock_str.upper().find("LANGUAGE=PDF") != -1)) or \
+           (firstblock_str.find("%PDF-") != -1) :
             return True
         else :
             return False

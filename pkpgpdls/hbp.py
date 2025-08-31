@@ -26,14 +26,21 @@ import os
 import mmap
 from struct import unpack
 
-import pdlparser
+from . import pdlparser
 
 class Parser(pdlparser.PDLParser) :
     """A parser for HBP documents."""
     format = "Brother HBP"
     def isValid(self) :
         """Returns True if data is HBP, else False."""
-        if self.firstblock.find("@PJL ENTER LANGUAGE = HBP\n") != -1 :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if firstblock_str.find("@PJL ENTER LANGUAGE = HBP\n") != -1 :
             return True
         else :
             return False

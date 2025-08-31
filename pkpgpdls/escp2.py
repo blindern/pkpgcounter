@@ -23,17 +23,24 @@
 
 import sys
 
-import pdlparser
+from . import pdlparser
 
 class Parser(pdlparser.PDLParser) :
     """A parser for ESC/P2 documents."""
     format = "ESC/P2"
     def isValid(self) :
         """Returns True if data is ESC/P2, else False."""
-        if self.firstblock.startswith("\033@") or \
-           self.firstblock.startswith("\033*") or \
-           self.firstblock.startswith("\n\033@") or \
-           self.firstblock.startswith("\0\0\0\033\1@EJL") : # ESC/P Raster ??? Seen on Stylus Photo 1284
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if firstblock_str.startswith("\033@") or \
+           firstblock_str.startswith("\033*") or \
+           firstblock_str.startswith("\n\033@") or \
+           firstblock_str.startswith("\0\0\0\033\1@EJL") : # ESC/P Raster ??? Seen on Stylus Photo 1284
             return True
         else :
             return False
@@ -71,4 +78,4 @@ class Parser(pdlparser.PDLParser) :
         elif pagecount4 :
             return pagecount4
         else :
-            return int(pagecount1 / 2)
+            return int(pagecount1 // 2)

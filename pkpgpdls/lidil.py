@@ -29,7 +29,7 @@
 
 import struct
 
-import pdlparser
+from . import pdlparser
 
 HEADERSIZE = 10 # LIDIL header is 10 bytes long
 
@@ -56,13 +56,18 @@ class Parser(pdlparser.PDLParser) :
         # Beginning Of File marker is a Sync packet, followed with
         # a Sync Complete packet followed with a Reset packet.
         # We just look at the start of the Sync packet for simplicity's sake.
-        BOFMarker = "$\x01\x00\x00\x07"
+        BOFMarker = b"$\x01\x00\x00\x07"
         # End Of File marker is a Sync Complete packet followed
         # with a Reset packet. We ignore the preceding Sync packet
         # for simplicity's sake.
-        EOFMarker = "$\x00\x10\x00\x08\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff$$\x00\x10\x00\x06\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff$"
-        if self.firstblock.startswith(BOFMarker) \
-           and self.lastblock.endswith(EOFMarker) :
+        EOFMarker = b"$\x00\x10\x00\x08\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff$$\x00\x10\x00\x06\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff$"
+
+        # Ensure we're working with bytes
+        firstblock = self.firstblock if isinstance(self.firstblock, bytes) else self.firstblock.encode('latin1', errors='ignore')
+        lastblock = self.lastblock if isinstance(self.lastblock, bytes) else self.lastblock.encode('latin1', errors='ignore')
+
+        if firstblock.startswith(BOFMarker) \
+           and lastblock.endswith(EOFMarker) :
             return True
         else :
             return False
@@ -78,7 +83,7 @@ class Parser(pdlparser.PDLParser) :
                     break
                 if (len(header) != HEADERSIZE) or (header[0] != "$") :
                     # Invalid header or no Frame Sync byte.
-                    raise pdlparser.PDLParserError, "This file doesn't seem to be valid Hewlett-Packard LIDIL datas."
+                    raise pdlparser.PDLParserError("This file doesn't seem to be valid Hewlett-Packard LIDIL datas.")
                 (framesync,
                  cmdlength,
                  dummy,
@@ -93,7 +98,7 @@ class Parser(pdlparser.PDLParser) :
                         ejectpage += 1
                 self.infile.seek(cmdlength + datalength - len(header), 1) # relative seek
         except struct.error :
-            raise pdlparser.PDLParserError, "This file doesn't seem to be valid Hewlett-Packard LIDIL datas."
+            raise pdlparser.PDLParserError("This file doesn't seem to be valid Hewlett-Packard LIDIL datas.")
 
         # Number of page eject commands should be sufficient,
         # but we never know : someone could try to cheat the printer

@@ -26,16 +26,23 @@ import os
 import mmap
 from struct import unpack
 
-import pdlparser
-import pjl
+from . import pdlparser
+from . import pjl
 
 class Parser(pdlparser.PDLParser) :
     """A parser for ESC/PageS03 documents."""
     format = "ESC/PageS03"
     def isValid(self) :
-        """Returns True if data is TIFF, else False."""
-        if self.firstblock.startswith("\033\1@EJL") and \
-            (self.firstblock.find("=ESC/PAGES03\n") != -1) :
+        """Returns True if data is ESC/PageS03, else False."""
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if firstblock_str.startswith("\033\1@EJL") and \
+            (firstblock_str.find("=ESC/PAGES03\n") != -1) :
             return True
         else :
             return False
@@ -53,10 +60,10 @@ class Parser(pdlparser.PDLParser) :
         startpos = minfile.find(marker)
         startsequence = chr(0x1d)
         if startpos == -1 :
-            raise pdlparser.PDLParserError, "Invalid ESC/PageS03 file."
+            raise pdlparser.PDLParserError("Invalid ESC/PageS03 file.")
         startpos += len(marker)
         if minfile[startpos] != startsequence :
-            raise pdlparser.PDLParserError, "Invalid ESC/PageS03 file."
+            raise pdlparser.PDLParserError("Invalid ESC/PageS03 file.")
         endsequence = "eps{I"
         lgendsequence = len(endsequence)
         try :

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # pkpgcounter : a generic Page Description Language parser
@@ -26,7 +26,7 @@
 import sys
 import os
 import glob
-import md5
+import hashlib
 import tempfile
 import time
 
@@ -50,7 +50,7 @@ class TestSuite :
 
     def computeChecksum(self) :
         """Computes an MD5 checksum for the input file's content."""
-        checksum = md5.new()
+        checksum = hashlib.md5()
         istemp = False
         if self.inputfile == "-" :
             # Input is standard input, so we must use a temporary
@@ -170,7 +170,7 @@ class TestSuite :
         masterfilename = self.inputfile
         self.mastersize = mastersize = self.computeSize(masterfilename)
         if not mastersize :
-            raise RuntimeError, "Unable to compute the size of the testsuite's master file %(masterfilename)s" % locals()
+            raise RuntimeError("Unable to compute the size of the testsuite's master file %(masterfilename)s" % locals())
         else :
             sys.stdout.write("Master file's contains %(mastersize)i pages.\n" % locals())
         testsuite = glob.glob("testsuite.*")

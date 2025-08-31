@@ -23,14 +23,21 @@
 
 import struct
 
-import pdlparser
+from . import pdlparser
 
 class Parser(pdlparser.PDLParser) :
     """A parser for Structured Fax documents."""
     format = "Structured Fax"
     def isValid(self) :
         """Returns True if data is Structured Fax, else False."""
-        if self.firstblock.startswith("Sfff") :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if firstblock_str.startswith("Sfff") :
             return True
         else :
             return False
@@ -99,5 +106,5 @@ class Parser(pdlparser.PDLParser) :
                         break # End Of Document
                     self.infile.seek(offsetnextpage, 1)
         except struct.error :
-             raise pdlparser.PDLParserError, "Invalid Structured Fax datas"
+             raise pdlparser.PDLParserError("Invalid Structured Fax datas")
         return max(docpagecount, pagecount)

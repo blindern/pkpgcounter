@@ -21,11 +21,11 @@
 
 """This modules implements a page counter for PNM (ascii) documents."""
 
-import pdlparser
+from . import pdlparser
 
 class Parser(pdlparser.PDLParser) :
     """A parser for PNM (ascii) documents."""
-    openmode = "rU"
+    openmode = "r"
     format = "PNM (ascii)"
     def isValid(self) :
         """Returns True if data is ASCII PNM, else False."""

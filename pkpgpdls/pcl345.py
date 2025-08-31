@@ -26,8 +26,8 @@ import os
 import mmap
 from struct import unpack
 
-import pdlparser
-import pjl
+from . import pdlparser
+from . import pjl
 
 NUL = chr(0x00)
 LINEFEED = chr(0x0a)
@@ -92,24 +92,35 @@ class Parser(pdlparser.PDLParser) :
 
     def isValid(self) :
         """Returns True if data is PCL3/4/5, else False."""
+        # Convert bytes to string for text-based parsing
+        if isinstance(self.firstblock, bytes):
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        else:
+            firstblock_str = self.firstblock
+
+        if isinstance(self.lastblock, bytes):
+            lastblock_str = self.lastblock.decode('latin1', errors='ignore')
+        else:
+            lastblock_str = self.lastblock
+
         try :
             pos = 0
-            while self.firstblock[pos] == chr(0) :
+            while firstblock_str[pos] == chr(0) :
                 pos += 1
         except IndexError :
             return False
         else :
-            firstblock = self.firstblock[pos:]
-            if firstblock.startswith("\033E\033") or \
-               firstblock.startswith("\033(") or \
-               firstblock.startswith("\033%1BBPIN;") or \
-               ((pos == 11000) and firstblock.startswith("\033")) or \
-               (firstblock.startswith("\033*rbC") and (not self.lastblock[-3:] == "\f\033@")) or \
-               firstblock.startswith("\033*rB\033") or \
-               firstblock.startswith("\033%8\033") or \
-               (firstblock.find("\033%-12345X") != -1) or \
-               (firstblock.find("@PJL ENTER LANGUAGE=PCL\012\015\033") != -1) or \
-               (firstblock.startswith(chr(0xcd)+chr(0xca)) and (firstblock.find("\033E\033") != -1)) :
+            firstblock_trimmed = firstblock_str[pos:]
+            if firstblock_trimmed.startswith("\033E\033") or \
+               firstblock_trimmed.startswith("\033(") or \
+               firstblock_trimmed.startswith("\033%1BBPIN;") or \
+               ((pos == 11000) and firstblock_trimmed.startswith("\033")) or \
+               (firstblock_trimmed.startswith("\033*rbC") and (not lastblock_str[-3:] == "\f\033@")) or \
+               firstblock_trimmed.startswith("\033*rB\033") or \
+               firstblock_trimmed.startswith("\033%8\033") or \
+               (firstblock_trimmed.find("\033%-12345X") != -1) or \
+               (firstblock_trimmed.find("@PJL ENTER LANGUAGE=PCL\012\015\033") != -1) or \
+               (firstblock_trimmed.startswith(chr(0xcd)+chr(0xca)) and (firstblock_trimmed.find("\033E\033") != -1)) :
                 return True
             else :
                 return False

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # pkpgcounter : a generic Page Description Language parser
@@ -25,18 +25,9 @@ import sys
 import glob
 import os
 import shutil
-try :
-    from distutils.core import setup
-except ImportError, msg :
-    sys.stderr.write("%s\n" % msg)
-    sys.stderr.write("You need the DistUtils Python module.\nunder Debian, you may have to install the python-dev package.\nOf course, YMMV.\n")
-    sys.exit(-1)
+from setuptools import setup
 
-try :
-    from PIL import Image
-except ImportError :
-    sys.stderr.write("You need the Python Imaging Library (either PIL or Pillow).\n")
-    sys.exit(-1)
+# PIL/Pillow will be checked at runtime, not during setup
 
 sys.path.insert(0, "pkpgpdls")
 from pkpgpdls.version import __version__, __doc__

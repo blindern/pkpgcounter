@@ -21,8 +21,8 @@
 
 """This modules implements a page counter for plain text documents."""
 
-import pdlparser
-import version
+from . import pdlparser
+from . import version
 
 class Parser(pdlparser.PDLParser) :
     """A parser for plain text documents."""
@@ -30,7 +30,7 @@ class Parser(pdlparser.PDLParser) :
                        'a2ps --borders 0 --quiet --portrait --no-header --columns 1 --output - "%(infname)s" | gs -sDEVICE=tiff24nc -dPARANOIDSAFER -dNOPAUSE -dBATCH -dQUIET -r"%(dpi)i" -sOutputFile="%(outfname)s" -',
                      ]
     required = [ "a2ps | enscript", "gs" ]
-    openmode = "rU"
+    openmode = "r"
     format = "plain text"
     def isValid(self) :
         """Returns True if data is plain text, else False.
@@ -39,7 +39,13 @@ class Parser(pdlparser.PDLParser) :
            extract lines from the first block (sufficiently large).
            If it's impossible to find one we consider it's not plain text.
         """
-        lines = self.firstblock.split("\r\n")
+        # Convert bytes to string for text-based parsing
+        if isinstance(self.firstblock, bytes):
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        else:
+            firstblock_str = self.firstblock
+
+        lines = firstblock_str.split("\r\n")
         if len(lines) == 1 :
             lines = lines[0].split("\r")
             if len(lines) == 1 :

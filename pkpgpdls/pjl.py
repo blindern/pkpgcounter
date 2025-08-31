@@ -141,7 +141,7 @@ def test() :
             mustclose = True
         try :
             parser = klass(infile.read(), debug=1)
-        except PJLParserError, msg :
+        except PJLParserError as msg :
             sys.stderr.write("ERROR: %s\n" % msg)
             sys.stderr.flush()
         if mustclose :

@@ -24,8 +24,8 @@
 import os
 import tempfile
 
-import pdlparser
-import version
+from . import pdlparser
+from . import version
 
 class Parser(pdlparser.PDLParser) :
     """A parser for that MS crap thing."""
@@ -39,12 +39,19 @@ class Parser(pdlparser.PDLParser) :
            IMPORTANT : some magic values are not reused here because they
            IMPORTANT : seem to be specific to some particular i18n release.
         """
-        if self.firstblock.startswith("PO^Q`") \
-           or self.firstblock.startswith("\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1") \
-           or self.firstblock.startswith("\xfe7\x00#") \
-           or self.firstblock.startswith("\xdb\xa5-\x00\x00\x00") \
-           or self.firstblock.startswith("\x31\xbe\x00\x00") \
-           or self.firstblock[2112:].startswith("MSWordDoc") :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if firstblock_str.startswith("PO^Q`") \
+           or firstblock_str.startswith("\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1") \
+           or firstblock_str.startswith("\xfe7\x00#") \
+           or firstblock_str.startswith("\xdb\xa5-\x00\x00\x00") \
+           or firstblock_str.startswith("\x31\xbe\x00\x00") \
+           or firstblock_str[2112:].startswith("MSWordDoc") :
             # Here we do the missing test because all commands will be needed even in page counting mode
             if self.isMissing(self.required) :
                 return False
@@ -68,7 +75,7 @@ class Parser(pdlparser.PDLParser) :
             infname = self.filename
             status = os.system(doctops % locals())
             if status or not os.stat(outfname).st_size :
-                raise pdlparser.PDLParserError, "Impossible to convert input document %(infname)s to PostScript" % locals()
+                raise pdlparser.PDLParserError("Impossible to convert input document %(infname)s to PostScript" % locals())
             psinputfile = open(outfname, "rb")
             try :
                 (first, last) = self.parent.readFirstAndLastBlocks(psinputfile)
@@ -80,4 +87,4 @@ class Parser(pdlparser.PDLParser) :
                 psinputfile.close()
         finally :
             workfile.close()
-        raise pdlparser.PDLParserError, "Impossible to count pages in %(infname)s" % locals()
+        raise pdlparser.PDLParserError("Impossible to count pages in %(infname)s" % locals())

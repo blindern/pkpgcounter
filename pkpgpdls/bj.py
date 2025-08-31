@@ -24,14 +24,21 @@
 import os
 import mmap
 
-import pdlparser
+from . import pdlparser
 
 class Parser(pdlparser.PDLParser) :
     """A parser for Canon BJ documents."""
     format = "Canon BJ/BJC"
     def isValid(self) :
         """Returns True if data is BJ/BJC, else False."""
-        if self.firstblock.startswith("\033[K\002\000") :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if firstblock_str.startswith("\033[K\002\000") :
             return True
         else :
             return False

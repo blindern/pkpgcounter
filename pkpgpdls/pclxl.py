@@ -26,8 +26,8 @@ import os
 import mmap
 from struct import unpack
 
-import pdlparser
-import pjl
+from . import pdlparser
+from . import pjl
 
 class Parser(pdlparser.PDLParser) :
     """A parser for PCLXL (aka PCL6) documents."""
@@ -83,14 +83,21 @@ class Parser(pdlparser.PDLParser) :
 
     def isValid(self) :
         """Returns True if data is HP PCLXL aka PCL6, or Brother's' XL2HB, else False."""
-        if (((self.firstblock[:128].find("\033%-12345X") != -1) and \
-             (self.firstblock.find(" HP-PCL XL;") != -1) and \
-             ((self.firstblock.find("LANGUAGE=PCLXL") != -1) or \
-              (self.firstblock.find("LANGUAGE = PCLXL") != -1)))) \
-             or ((self.firstblock.startswith(chr(0xcd)+chr(0xca)) and (self.firstblock.find(" HP-PCL XL;") != -1))) :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if (((firstblock_str[:128].find("\033%-12345X") != -1) and \
+             (firstblock_str.find(" HP-PCL XL;") != -1) and \
+             ((firstblock_str.find("LANGUAGE=PCLXL") != -1) or \
+              (firstblock_str.find("LANGUAGE = PCLXL") != -1)))) \
+             or ((firstblock_str.startswith(chr(0xcd)+chr(0xca)) and (firstblock_str.find(" HP-PCL XL;") != -1))) :
             return True
-        elif (self.firstblock[:128].find("\033%-12345X") != -1) \
-            and (self.firstblock.find("BROTHER XL2HB;") != -1) :
+        elif (firstblock_str[:128].find("\033%-12345X") != -1) \
+            and (firstblock_str.find("BROTHER XL2HB;") != -1) :
             self.format = "XL2HB"
             return True
         else :
@@ -161,7 +168,7 @@ class Parser(pdlparser.PDLParser) :
                             startpos = pos + 7
                             size = unpack(self.unpackLong, self.minfile[pos+3:startpos])[0]
                         else :
-                            raise pdlparser.PDLParserError, "Error on size at %s : %s" % (pos+2, length)
+                            raise pdlparser.PDLParserError("Error on size at %s : %s" % (pos+2, length))
                         break
                 try :
                     mediatypelabel = minfile[startpos:startpos+size]
@@ -221,7 +228,7 @@ class Parser(pdlparser.PDLParser) :
         try :
             return 1 + length + size * unpack(self.unpackType[length], self.minfile[pos:pos+length])[0]
         except KeyError :
-            raise pdlparser.PDLParserError, "Error on array size at %x" % nextpos
+            raise pdlparser.PDLParserError("Error on array size at %x" % nextpos)
 
     def array_8(self, nextpos) :
         """Handles byte arrays."""
@@ -304,7 +311,7 @@ class Parser(pdlparser.PDLParser) :
             try :
                 return unpack(self.unpackType[4], self.minfile[nextpos+1:nextpos+5])[0] + 5
             except KeyError :
-                raise pdlparser.PDLParserError, "Error on size '%s' at %x" % (length, nextpos+1)
+                raise pdlparser.PDLParserError("Error on size '%s' at %x" % (length, nextpos+1))
         return 0
 
     def x46_class3(self, nextpos) :
@@ -333,7 +340,7 @@ class Parser(pdlparser.PDLParser) :
                     try :
                         return unpack(self.unpackType[length], self.minfile[pos+1:pos+length+1])[0]
                     except KeyError :
-                        raise pdlparser.PDLParserError, "Error on size '%s' at %x" % (length, pos+1)
+                        raise pdlparser.PDLParserError("Error on size '%s' at %x" % (length, pos+1))
             val = ord(minfile[pos])
         return 0
 
@@ -417,9 +424,9 @@ class Parser(pdlparser.PDLParser) :
                 # elif endian == 0x27 : # TODO : This is the ASCII binding code : what does it do exactly ?
                 #
                 else :
-                    raise pdlparser.PDLParserError, "Unknown endianness marker 0x%02x at start !" % endian
+                    raise pdlparser.PDLParserError("Unknown endianness marker 0x%02x at start !" % endian)
         if not found :
-            raise pdlparser.PDLParserError, "This file doesn't seem to be PCLXL (aka PCL6)"
+            raise pdlparser.PDLParserError("This file doesn't seem to be PCLXL (aka PCL6)")
 
         # Initialize Media Sources
         for i in range(8, 256) :

@@ -26,8 +26,8 @@ import os
 import mmap
 from struct import unpack
 
-import pdlparser
-import pjl
+from . import pdlparser
+from . import pjl
 
 class Parser(pdlparser.PDLParser) :
     """A parser for QPDL (aka SPL2) documents."""
@@ -72,9 +72,16 @@ class Parser(pdlparser.PDLParser) :
 
     def isValid(self) :
         """Returns True if data is QPDL aka SPL2, else False."""
-        if ((self.firstblock[:128].find("\033%-12345X") != -1) and \
-             ((self.firstblock.find("LANGUAGE=QPDL") != -1) or \
-              (self.firstblock.find("LANGUAGE = QPDL") != -1))) :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if ((firstblock_str[:128].find("\033%-12345X") != -1) and \
+             ((firstblock_str.find("LANGUAGE=QPDL") != -1) or \
+              (firstblock_str.find("LANGUAGE = QPDL") != -1))) :
             return True
         else :
             return False

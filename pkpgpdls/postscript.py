@@ -24,25 +24,32 @@
 import sys
 import os
 
-import pdlparser
-import inkcoverage
+from . import pdlparser
+from . import inkcoverage
 
 class Parser(pdlparser.PDLParser) :
     """A parser for PostScript documents."""
     totiffcommands = [ 'gs -sDEVICE=tiff24nc -dPARANOIDSAFER -dNOPAUSE -dBATCH -dQUIET -r"%(dpi)i" -sOutputFile="%(outfname)s" "%(infname)s"' ]
     required = [ "gs" ]
-    openmode = "rU"
+    openmode = "r"
     format = "PostScript"
     def isValid(self) :
         """Returns True if data is PostScript, else False."""
-        if self.firstblock.startswith("%!") or \
-           self.firstblock.startswith("\004%!") or \
-           self.firstblock.startswith("\033%-12345X%!PS") or \
-           ((self.firstblock[:128].find("\033%-12345X") != -1) and \
-             ((self.firstblock.find("LANGUAGE=POSTSCRIPT") != -1) or \
-              (self.firstblock.find("LANGUAGE = POSTSCRIPT") != -1) or \
-              (self.firstblock.find("LANGUAGE = Postscript") != -1))) or \
-              (self.firstblock.find("%!PS-Adobe") != -1) :
+        try:
+            # Convert bytes to string for text-based parsing
+            firstblock_str = self.firstblock.decode('latin1', errors='ignore')
+        except (UnicodeDecodeError, AttributeError):
+            # If it's already a string or can't be decoded, use as-is
+            firstblock_str = self.firstblock
+
+        if firstblock_str.startswith("%!") or \
+           firstblock_str.startswith("\004%!") or \
+           firstblock_str.startswith("\033%-12345X%!PS") or \
+           ((firstblock_str[:128].find("\033%-12345X") != -1) and \
+             ((firstblock_str.find("LANGUAGE=POSTSCRIPT") != -1) or \
+              (firstblock_str.find("LANGUAGE = POSTSCRIPT") != -1) or \
+              (firstblock_str.find("LANGUAGE = Postscript") != -1))) or \
+           (firstblock_str.find("%!PS-Adobe") != -1) :
             return True
         else :
             return False
@@ -51,7 +58,7 @@ class Parser(pdlparser.PDLParser) :
         """Get the count through GhostScript, useful for non-DSC compliant PS files."""
         self.logdebug("Internal parser sucks, using GhostScript instead...")
         if self.isMissing(self.required) :
-            raise pdlparser.PDLParserError, "The gs interpreter is nowhere to be found in your PATH (%s)" % os.environ.get("PATH", "")
+            raise pdlparser.PDLParserError("The gs interpreter is nowhere to be found in your PATH (%s)" % os.environ.get("PATH", ""))
         infname = self.filename
         command = 'gs -sDEVICE=bbox -dPARANOIDSAFER -dNOPAUSE -dBATCH -dQUIET "%(infname)s" 2>&1 | grep -c "%%HiResBoundingBox:" 2>/dev/null'
         pagecount = 0
@@ -59,11 +66,11 @@ class Parser(pdlparser.PDLParser) :
         try :
             try :
                 pagecount = int(fromchild.readline().strip())
-            except (IOError, OSError, AttributeError, ValueError), msg :
-                raise pdlparser.PDLParserError, "Problem during analysis of Binary PostScript document : %s" % msg
+            except (IOError, OSError, AttributeError, ValueError) as msg :
+                raise pdlparser.PDLParserError("Problem during analysis of Binary PostScript document : %s" % msg)
         finally :
             if fromchild.close() is not None :
-                raise pdlparser.PDLParserError, "Problem during analysis of Binary PostScript document"
+                raise pdlparser.PDLParserError("Problem during analysis of Binary PostScript document")
         self.logdebug("GhostScript said : %s pages" % pagecount)
         return pagecount * self.copies
 
@@ -138,7 +145,7 @@ class Parser(pdlparser.PDLParser) :
                     notinteger = True # It seems that sometimes it's not an integer but an EPS file name
                 else :
                     notinteger = False
-                    if newpagenum <= oldpagenum :
+                    if oldpagenum is not None and newpagenum <= oldpagenum :
                         # Now correctly handles multiple copies when printed from MSOffice.
                         # Thanks to Jiri Popelka for the fix.
                         proceed = False
@@ -181,6 +188,6 @@ class Parser(pdlparser.PDLParser) :
         if notrust or not nbpages :
             try :
                 newnbpages = self.throughGhostScript()
-            except pdlparser.PDLParserError, msg :
+            except pdlparser.PDLParserError as msg :
                 self.logdebug(msg)
         return max(nbpages, newnbpages)
